@@ -1,0 +1,28 @@
+{
+  "name": "express-ts-api",
+  "type": "node",
+  "build": {
+    "command": "npm install && npm run build"
+  },
+  "run": {
+    "command": "npm start"
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  },
+  "routes": [
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/health",
+      "method": "GET"
+    }
+  ],
+  "healthCheck": {
+    "path": "/health",
+    "expectedStatus": 200
+  }
+}
