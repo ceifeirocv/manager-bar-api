@@ -15,7 +15,12 @@
     "DATABASE_NAME": "${DATABASE_NAME}",
     "DATABASE_USER": "${DATABASE_USER}",
     "DATABASE_PASSWORD": "${DATABASE_PASSWORD}",
-    "DATABASE_SSL": "${DATABASE_SSL}"
+    "DATABASE_SSL": "${DATABASE_SSL}",
+    "BETTER_AUTH_SECRET": "${BETTER_AUTH_SECRET}",
+    "BETTER_AUTH_URL": "${BETTER_AUTH_URL}",
+    "MAILERSEND_API_KEY": "${MAILERSEND_API_KEY}",
+    "EMAIL_FROM": "${EMAIL_FROM}",
+    "EMAIL_FROM_NAME": "${EMAIL_FROM_NAME}"
   },
   "routes": [
     {
@@ -29,6 +34,15 @@
     {
       "path": "/db-health",
       "method": "GET"
+    },
+
+    {
+      "path": "/api/users/me",
+      "method": "GET"
+    },
+    {
+      "path": "/api/auth/*",
+      "method": "ALL"
     }
   ],
   "healthCheck": {

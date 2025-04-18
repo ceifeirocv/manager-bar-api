@@ -4,6 +4,8 @@ import { errorHandler } from "./common/middleware/error.middleware.js";
 import * as dotenv from "dotenv";
 import { testConnection } from "./db/index.js";
 import { setupDatabase } from "./db-setup.js";
+import { authRouter } from "./modules/auth/auth.routes.js";
+import { usersRouter } from "./modules/users/users.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +18,8 @@ app.use(express.json());
 
 // Routes
 app.use("/health", healthRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
 
 // Default route
 app.get("/", (_req, res) => {

@@ -45,9 +45,223 @@ npm start
 
 ## API Endpoints
 
+### System Endpoints
+
 - `GET /`: Welcome message
 - `GET /health`: Health check endpoint
 - `GET /db-health`: Database connection check
+
+### User Endpoints
+
+- `GET /api/users/me`: Get current user profile (protected)
+
+### Authentication Endpoints (BetterAuth)
+
+- `POST /api/auth/signup`: Register a new user
+- `POST /api/auth/signin`: Log in a user
+- `POST /api/auth/signout`: Log out a user
+- `POST /api/auth/reset-password`: Request a password reset
+- `POST /api/auth/verify-email`: Verify a user's email
+
+## Authentication with BetterAuth
+
+This project uses BetterAuth for authentication, which provides a comprehensive authentication solution with features like email/password authentication, social sign-on, and more.
+
+### Authentication Setup
+
+The authentication system is configured in `src/auth.ts` and uses the Drizzle adapter to integrate with the MySQL database.
+
+```typescript
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "./db/index.js";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "mysql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+});
+```
+
+### Built-in Authentication Routes
+
+BetterAuth provides built-in routes for user management, including:
+
+- User registration: `POST /api/auth/signup`
+- User login: `POST /api/auth/signin`
+- User logout: `POST /api/auth/signout`
+- Password reset: `POST /api/auth/reset-password`
+- Email verification: `POST /api/auth/verify-email`
+
+These routes are automatically available when you mount the BetterAuth handler in your Express app.
+
+### Authentication Flow
+
+1. **User Registration**:
+
+   - User submits email and password to `/api/auth/signup`
+   - BetterAuth creates a new user in the database
+   - A verification email is sent to the user's email address
+   - User receives a success response
+
+2. **Email Verification**:
+
+   - User clicks the verification link in the email
+   - BetterAuth verifies the token and marks the email as verified
+   - User is redirected to the application
+
+3. **User Login**:
+
+   - User submits email and password to `/api/auth/signin`
+   - BetterAuth validates the credentials
+   - If valid, BetterAuth creates a new session and returns a session token
+   - The session token is stored in a cookie
+
+4. **Accessing Protected Routes**:
+
+   - The client includes the session cookie in requests to protected routes
+   - The `requireAuth` middleware verifies the session
+   - If valid, the request proceeds to the route handler
+   - If invalid, a 401 Unauthorized response is returned
+
+5. **Password Reset**:
+   - User requests a password reset at `/api/auth/reset-password`
+   - BetterAuth sends a password reset email
+   - User clicks the reset link and sets a new password
+   - User can now log in with the new password
+
+### Email Configuration with MailerSend
+
+This project uses MailerSend for sending verification and password reset emails. The email functionality is configured directly in the `emailAndPassword` section of the BetterAuth configuration:
+
+```typescript
+emailAndPassword: {
+  enabled: true,
+  verifyEmail: true, // Require email verification
+
+  // Email verification handler
+  sendVerificationEmail: async ({ user, url }, _request) => {
+    // Create and send verification email using MailerSend
+    const emailParams = new EmailParams()
+      .setFrom(new Sender(defaultSender.email, defaultSender.name))
+      .setTo([new Recipient(user.email)])
+      .setSubject("Verify your email address")
+      .setHtml(`
+        <h1>Verify your email address</h1>
+        <p>Click the link below to verify your email address:</p>
+        <p><a href="${url}">${url}</a></p>
+      `);
+
+    await mailerSend.email.send(emailParams);
+  },
+
+  // Password reset handler
+  sendResetPassword: async ({ user, url }, _request) => {
+    // Create and send password reset email using MailerSend
+    // ...
+  },
+},
+```
+
+### Protected Routes
+
+To protect routes that require authentication, use the `requireAuth` middleware:
+
+```typescript
+import { requireAuth } from "../auth/auth.routes.js";
+
+// Public route - accessible to everyone
+app.get("/api/public", (req, res) => {
+  res.json({ message: "This is a public endpoint" });
+});
+
+// Protected route - only accessible to authenticated users
+app.get("/api/protected", requireAuth, async (req, res) => {
+  // Fetch the session directly from the auth API
+  const session = await auth.api.getSession({
+    headers: req.headers,
+  });
+
+  if (!session) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  res.json({
+    message: "This is a protected endpoint",
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name || null,
+    },
+  });
+});
+```
+
+### Environment Variables
+
+The application requires the following environment variables:
+
+```
+# BetterAuth Configuration
+BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters-long
+BETTER_AUTH_URL=http://localhost:3000
+
+# MailerSend Configuration
+MAILERSEND_API_KEY=apikey-mlsn.cb034321de8857846b6431aca458d16c436bd2639f0f125e61369236a16a543c
+EMAIL_FROM=auth@yourdomain.com
+EMAIL_FROM_NAME=Your App Name
+
+# Database Configuration
+DATABASE_HOST=your-database-host
+DATABASE_PORT=your-database-port
+DATABASE_NAME=your-database-name
+DATABASE_USER=your-database-user
+DATABASE_PASSWORD=your-database-password
+DATABASE_SSL=true
+```
+
+Make sure to update these values with your actual configuration details.
+
+### Email Configuration
+
+This project uses MailerSend for sending verification and password reset emails. The email templates are configured in the `src/auth.ts` file:
+
+```typescript
+// Email verification configuration
+emailVerification: {
+  sendVerificationEmail: async ({ user, url }, _request) => {
+    try {
+      // Create email parameters using MailerSend
+      const emailParams = new EmailParams()
+        .setFrom(new Sender(defaultSender.email, defaultSender.name))
+        .setTo([new Recipient(user.email)])
+        .setSubject("Verify your email address")
+        .setHtml(`
+          <h1>Verify your email address</h1>
+          <p>Click the link below to verify your email address:</p>
+          <p><a href="${url}">${url}</a></p>
+        `);
+
+      // Send the email
+      await mailerSend.email.send(emailParams);
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      throw new Error("Failed to send verification email");
+    }
+  }
+},
+
+// Password reset configuration
+passwordReset: {
+  sendResetPasswordEmail: async ({ user, url }, _request) => {
+    // Create and send password reset email using MailerSend
+    // ...
+  }
+},
+```
 
 ## Database Integration
 
