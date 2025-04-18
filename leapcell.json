@@ -2,14 +2,20 @@
   "name": "express-ts-api",
   "type": "node",
   "build": {
-    "command": "npm install && npm run build"
+    "command": "npm install && npm run build && npm run db:migrate"
   },
   "run": {
-    "command": "npm start"
+    "command": "node --loader ts-node/esm src/db-setup.ts && npm start"
   },
   "env": {
     "NODE_ENV": "production",
-    "PORT": "3000"
+    "PORT": "3000",
+    "DATABASE_HOST": "${DATABASE_HOST}",
+    "DATABASE_PORT": "${DATABASE_PORT}",
+    "DATABASE_NAME": "${DATABASE_NAME}",
+    "DATABASE_USER": "${DATABASE_USER}",
+    "DATABASE_PASSWORD": "${DATABASE_PASSWORD}",
+    "DATABASE_SSL": "${DATABASE_SSL}"
   },
   "routes": [
     {
@@ -19,10 +25,14 @@
     {
       "path": "/health",
       "method": "GET"
+    },
+    {
+      "path": "/db-health",
+      "method": "GET"
     }
   ],
   "healthCheck": {
-    "path": "/health",
+    "path": "/db-health",
     "expectedStatus": 200
   }
 }
