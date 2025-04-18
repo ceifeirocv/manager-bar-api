@@ -9,7 +9,7 @@ dotenv.config();
 const mailerSend = new MailerSend({
   apiKey:
     process.env.MAILERSEND_API_KEY ||
-    "apikey-mlsn.cb034321de8857846b6431aca458d16c436bd2639f0f125e61369236a16a543c",
+    "",
 });
 
 const defaultSender = {
