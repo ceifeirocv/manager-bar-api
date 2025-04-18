@@ -11,14 +11,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "auth:generate": "npx @better-auth/cli generate --output src/db/schema/auth.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@better-auth/cli": "^1.2.7",
     "better-auth": "^1.2.7",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.42.0",
@@ -27,6 +27,7 @@
     "mysql2": "^3.14.0"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.2.7",
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.1",
     "drizzle-kit": "^0.31.0",

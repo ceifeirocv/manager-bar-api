@@ -86,6 +86,36 @@ export const auth = betterAuth({
 });
 ```
 
+### Database Schema Generation
+
+The database schema for BetterAuth is generated using the BetterAuth CLI. This ensures that the schema is always in sync with BetterAuth's requirements.
+
+```bash
+# Generate the auth schema
+npm run auth:generate
+
+# Generate migrations based on the schema
+npm run db:generate
+
+# Apply migrations to the database
+npm run db:migrate
+```
+
+This process will:
+
+1. Generate the necessary database schema in `src/db/schema/auth.ts`
+2. Create migration files based on the schema
+3. Apply the migrations to the database
+
+The schema includes the following tables:
+
+- `user`: Stores user information
+- `session`: Stores session information
+- `account`: Stores account information for various authentication providers
+- `verification`: Stores verification tokens for email verification and password reset
+
+The migration process is handled by Drizzle ORM, which ensures that the database schema is always in sync with the code.
+
 ### Built-in Authentication Routes
 
 BetterAuth provides built-in routes for user management, including:
@@ -314,27 +344,11 @@ When you run `npm run db:migrate`, Drizzle will:
 
 This ensures that migrations are only applied once and in the correct order, even when deploying to multiple environments.
 
-### Creating Schema Definitions
+### Creating Additional Schema Definitions
 
-To define your database schema, create new files in the `src/db/schema` directory. For example, to create a users table, you might create a file at `src/db/schema/users.ts` with the following content:
+If you need to define additional database tables beyond the authentication tables, create new files in the `src/db/schema` directory.
 
-```typescript
-import { mysqlTable, varchar, int, timestamp } from "drizzle-orm/mysql-core";
-
-export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-```
-
-Then, export your schema from the `src/db/schema/index.ts` file:
-
-```typescript
-export * from "./users.js";
-```
+For example, to create a custom table, you might create a file at `src/db/schema/custom.ts` with your table definitions.
 
 After defining your schema, generate migrations with `npm run db:generate` and apply them with `npm run db:migrate`.
 
@@ -363,7 +377,7 @@ The `leapcell.json` file contains the following configuration:
   "name": "express-ts-api",
   "type": "node",
   "build": {
-    "command": "npm install && npm run build && npm run db:push"
+    "command": "npm install && npm run build && npm run db:migrate"
   },
   "run": {
     "command": "node --loader ts-node/esm src/db-setup.ts && npm start"
@@ -371,12 +385,17 @@ The `leapcell.json` file contains the following configuration:
   "env": {
     "NODE_ENV": "production",
     "PORT": "3000",
-    "DATABASE_HOST": "your-mysql-host",
-    "DATABASE_PORT": "3306",
-    "DATABASE_NAME": "your-database-name",
-    "DATABASE_USER": "your-database-user",
-    "DATABASE_PASSWORD": "your-database-password",
-    "DATABASE_SSL": "true"
+    "DATABASE_HOST": "${DATABASE_HOST}",
+    "DATABASE_PORT": "${DATABASE_PORT}",
+    "DATABASE_NAME": "${DATABASE_NAME}",
+    "DATABASE_USER": "${DATABASE_USER}",
+    "DATABASE_PASSWORD": "${DATABASE_PASSWORD}",
+    "DATABASE_SSL": "${DATABASE_SSL}",
+    "BETTER_AUTH_SECRET": "${BETTER_AUTH_SECRET}",
+    "BETTER_AUTH_URL": "${BETTER_AUTH_URL}",
+    "MAILERSEND_API_KEY": "${MAILERSEND_API_KEY}",
+    "EMAIL_FROM": "${EMAIL_FROM}",
+    "EMAIL_FROM_NAME": "${EMAIL_FROM_NAME}"
   },
   "healthCheck": {
     "path": "/db-health",
@@ -391,7 +410,7 @@ You can modify this configuration to suit your specific needs.
 
 The Leapcell deployment includes the following features:
 
-1. **Automatic Database Migrations**: The `db:migrate` command is run during the build process to ensure the database schema is up to date in a safe, versioned manner.
+1. **Automatic Database Migrations**: The `db:migrate` command is run during the build process to apply the existing migrations to the database, ensuring the schema is up to date in a safe, versioned manner.
 
 2. **Database Setup Check**: Before starting the server, the database setup script is run to ensure the database exists and is accessible.
 
